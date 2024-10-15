@@ -1,0 +1,17 @@
+{
+  "name": "simplify-expo",
+  "version": "1.0.0",
+  "description": "A package to which has nativewind and expo-router already initialized.",
+  "main": "cli.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Gowtham Natarajan",
+  "license": "ISC",
+  "bin": {
+    "simplify-expo-cli": "./cli.js"
+  },
+  "dependencies": {
+    "commander": "^12.1.0"
+  }
+}

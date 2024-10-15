@@ -1,0 +1,1 @@
+Run `npx simplify-expo create` to get started.

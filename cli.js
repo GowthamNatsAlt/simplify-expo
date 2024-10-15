@@ -7,7 +7,7 @@ const path = require('path');
 
 const program = new Command();
 
-const default_location = 'my-app';
+const default_location = './';
 const repo_url = 'https://github.com/GowthamNatsAlt/simplify-expo-cloner.git';
 
 const cloneRepo = (location) => {

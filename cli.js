@@ -72,7 +72,6 @@ const downloadAndExtractRepo = (location) => {
             } else if (response.statusCode === 302 || response.statusCode === 301) {
                 // Handle redirection by following the `location` header
                 const newUrl = response.headers.location;
-                console.log(`Redirected to ${newUrl}`);
                 downloadFile(newUrl);
             } else {
                 console.error(`Download failed with status code ${response.statusCode}`);

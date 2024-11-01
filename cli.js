@@ -1,16 +1,17 @@
 #!/usr/bin/env node
 
 const { Command } = require('commander');
-const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const https = require('https');
+const unzipper = require('unzipper');
 
 const program = new Command();
 
 const default_location = './';
-const repo_url = 'https://github.com/GowthamNatsAlt/simplify-expo-cloner.git';
+const repo_zip_url = 'https://github.com/GowthamNatsAlt/simplify-expo-clone/archive/refs/heads/main.zip';
 
-const cloneRepo = (location) => {
+const downloadAndExtractRepo = (location) => {
     const absolutePath = path.resolve(location);
 
     // Check if the directory exists and is empty
@@ -20,21 +21,73 @@ const cloneRepo = (location) => {
             console.error(`Error: The directory is not empty. Enter another location.`);
             process.exit(1);
         }
+    } else {
+        fs.mkdirSync(absolutePath, { recursive: true });
     }
 
-    // Clone the repo
-    console.log("\nInitializing the application...")
-    const cloneCommand = `git clone ${repo_url} ${location}`;
-    try {
-        execSync(cloneCommand, { stdio: 'ignore' });
-        console.log(`App initialized at the given location -> ${location}.`);
-        console.log(`\nRun the following commands to start working on it:\n1. cd ${location}\n2. npm install\n\nHave fun!!!`);
-        process.exit(0);
-    } catch (error) {
-        console.error('Error: ', error.message);
-        process.exit(1);
-    }
-}
+    console.log("\nInitializing the application...");
+    const zipPath = path.join(absolutePath, 'repo.zip');
+
+    // Function to extract the zip file after download completes
+    const extractZip = () => {
+        fs.createReadStream(zipPath)
+            .pipe(unzipper.Parse())
+            .on('entry', (entry) => {
+                const fileName = entry.path.split('/').slice(1).join('/'); // Remove top-level folder
+                const filePath = path.join(absolutePath, fileName);
+
+                if (fileName) {
+                    if (entry.type === 'Directory') {
+                        fs.mkdirSync(filePath, { recursive: true });
+                    } else {
+                        entry.pipe(fs.createWriteStream(filePath));
+                    }
+                } else {
+                    entry.autodrain();
+                }
+            })
+            .on('close', () => {
+                fs.unlinkSync(zipPath); // Delete the zip file after extraction
+                console.log(`App initialized at the given location -> ${location}.`);
+                console.log(`\nRun the following commands to start working on it:\n1. cd ${location}\n2. npm install\n\nHave fun!!!`);
+                process.exit(0);
+            })
+            .on('error', (err) => {
+                console.error('Extraction error: ', err.message);
+                process.exit(1);
+            });
+    };
+
+    // Recursive function to handle redirects and download the zip file
+    const downloadFile = (url) => {
+        const file = fs.createWriteStream(zipPath);
+        https.get(url, (response) => {
+            if (response.statusCode === 200) {
+                response.pipe(file);
+                file.on('finish', () => {
+                    file.close();
+                    console.log("Download complete.");
+                    extractZip();
+                });
+            } else if (response.statusCode === 302 || response.statusCode === 301) {
+                // Handle redirection by following the `location` header
+                const newUrl = response.headers.location;
+                console.log(`Redirected to ${newUrl}`);
+                downloadFile(newUrl);
+            } else {
+                console.error(`Download failed with status code ${response.statusCode}`);
+                fs.unlinkSync(zipPath);
+                process.exit(1);
+            }
+        }).on('error', (err) => {
+            console.error('Download error: ', err.message);
+            fs.unlinkSync(zipPath);
+            process.exit(1);
+        });
+    };
+
+    downloadFile(repo_zip_url);
+};
 
 program
     .name('Simplify Expo')
@@ -54,11 +107,11 @@ program
                 } else {
                     location = input_location;
                 }
-                cloneRepo(location);
+                downloadAndExtractRepo(location);
             });
         } else {
-            cloneRepo(location);
+            downloadAndExtractRepo(location);
         }
-    })
+    });
 
-program.parse(process.argv)
+program.parse(process.argv);

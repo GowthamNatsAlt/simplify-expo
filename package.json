@@ -1,6 +1,6 @@
 {
   "name": "simplify-expo",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A package to which has nativewind and expo-router already initialized.",
   "main": "cli.js",
   "scripts": {
@@ -12,6 +12,7 @@
     "simplify-expo": "./cli.js"
   },
   "dependencies": {
-    "commander": "^12.1.0"
+    "commander": "^12.1.0",
+    "unzipper": "^0.10.11"
   }
 }
